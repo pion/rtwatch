@@ -33,8 +33,8 @@ go get github.com/pion/rtwatch
 
 ### Play your video
 ```
-rtwatch -container-path=/tmp/video.mp4
-> Video file '/tmp/output.mp4' is now available on ':8080', have fun!
+rtwatch -container-path=/home/sean/video.mp4
+> Video file '/home/sean/video.mp4' is now available on ':8080', have fun!
 ```
 
 ### Watch your video with friends!
