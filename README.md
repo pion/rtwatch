@@ -1,6 +1,10 @@
 <h4 align="center">Watch videos with friends using WebRTC, do all your pausing and seek on the backend.</h4>
 
 <p align="center">
+  <img style="min-width:100%;" src="https://raw.githubusercontent.com/pion/rtwatch/0d148eadb94c534cb62f39788251f057aea48adf/.github/rtwatch.gif">
+</p>
+
+<p align="center">
   <a href="https://pion.ly"><img src="https://img.shields.io/badge/pion-webrtc-gray.svg?longCache=true&colorB=brightgreen" alt="Pion webrtc"></a>
   <a href="https://pion.ly/slack"><img src="https://img.shields.io/badge/join-us%20on%20slack-gray.svg?longCache=true&logo=slack&colorB=brightgreen" alt="Slack Widget"></a>
   <br>
