@@ -1,4 +1,4 @@
-<h4 align="center">Watch videos with friends using WebRTC, do all your pausing and seek on the backend.</h4>
+<h4 align="center">Watch videos with friends using WebRTC, let your backend do the pausing and seeking.</h4>
 
 <p align="center">
   <img style="min-width:100%;" src="https://raw.githubusercontent.com/pion/rtwatch/0d148eadb94c534cb62f39788251f057aea48adf/.github/rtwatch.gif">
@@ -13,7 +13,7 @@
 </p>
 <br>
 
-Using Pion WebRTC and GStreamer you can now watch videos in realtime with your friends. Watch your favorite movie perfectly synchronized with multiple viewers. If someone pauses it pauses for everyone, and no one can and no one fast forward only their video.
+Using Pion WebRTC and GStreamer you can now watch videos in real-time with your friends. Watch your favorite movie perfectly synchronized with multiple viewers. If someone pauses it pauses for everyone, and no one can and no one fast forward only their video.
 
 *rtwatch* is different then any other solution because all state is stored on the backend. Only the current audio/video frame is being sent to the viewers, there is no way they can download/cache the videos either for future usage.
 
