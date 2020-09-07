@@ -23,6 +23,25 @@ Using Pion WebRTC and GStreamer you can now watch videos in real-time with your 
 `sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly`
 #### Windows MinGW64/MSYS2
 `pacman -S mingw-w64-x86_64-gstreamer mingw-w64-x86_64-gst-libav mingw-w64-x86_64-gst-plugins-good mingw-w64-x86_64-gst-plugins-bad mingw-w64-x86_64-gst-plugins-ugly`
+
+##### Error Handling
+ 
+   pkg-config --cflags  -- gstreamer-1.0 gstreamer-app-1.0
+   pkg-config: exec: "pkg-config": executable file not found in %PATH%
+
+> After gstreamer installation,SET the `PATH` variable to `C:/{path to gstreamer}/bin`
+
+   Sorry, unimplemented: 64 bit mode not compiled in
+
+> RUN `$ g++ -v` 
+
+> CHECK Target- x86_64-w64-mingw32(Required).
+
+  if not Download using [this](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download) 
+     
+
+
+
 #### macOS
 ```
 brew install gst-plugins-good pkg-config gst-plugins-bad gst-plugins-ugly
