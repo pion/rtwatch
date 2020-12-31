@@ -11,10 +11,11 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 	"unsafe"
 
-	"github.com/pion/webrtc/v2"
-	"github.com/pion/webrtc/v2/pkg/media"
+	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v3/pkg/media"
 )
 
 func init() {
@@ -23,16 +24,15 @@ func init() {
 
 // Pipeline is a wrapper for a GStreamer Pipeline
 type Pipeline struct {
-	Pipeline   *C.GstElement
-	audioTrack *webrtc.Track
-	videoTrack *webrtc.Track
+	Pipeline               *C.GstElement
+	audioTrack, videoTrack *webrtc.TrackLocalStaticSample
 }
 
 var pipeline = &Pipeline{}
 var pipelinesLock sync.Mutex
 
 // CreatePipeline creates a GStreamer Pipeline
-func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) *Pipeline {
+func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.TrackLocalStaticSample) *Pipeline {
 	pipelineStr := fmt.Sprintf("filesrc location=\"%s\" ! decodebin name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! opusenc ! appsink name=audio", containerPath)
 
 	pipelineStrUnsafe := C.CString(pipelineStr)
@@ -70,25 +70,14 @@ func (p *Pipeline) SeekToTime(seekPos int64) {
 	C.gstreamer_send_seek(p.Pipeline, C.int64_t(seekPos))
 }
 
-const (
-	videoClockRate = 90000
-	audioClockRate = 48000
-)
-
 //export goHandlePipelineBuffer
 func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.int, isVideo C.int) {
-	var track *webrtc.Track
-	var samples uint32
-
+	track := pipeline.audioTrack
 	if isVideo == 1 {
-		samples = uint32(videoClockRate * (float32(duration) / 1000000000))
 		track = pipeline.videoTrack
-	} else {
-		samples = uint32(audioClockRate * (float32(duration) / 1000000000))
-		track = pipeline.audioTrack
 	}
 
-	if err := track.WriteSample(media.Sample{Data: C.GoBytes(buffer, bufferLen), Samples: samples}); err != nil && err != io.ErrClosedPipe {
+	if err := track.WriteSample(media.Sample{Data: C.GoBytes(buffer, bufferLen), Duration: time.Duration(duration)}); err != nil && err != io.ErrClosedPipe {
 		panic(err)
 	}
 

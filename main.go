@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/pion/rtwatch/gst"
-	"github.com/pion/webrtc/v2"
+	"github.com/pion/webrtc/v3"
 )
 
 const homeHTML = `<!DOCTYPE html>
@@ -90,8 +90,8 @@ var (
 
 	peerConnectionConfig = webrtc.Configuration{}
 
-	audioTrack = &webrtc.Track{}
-	videoTrack = &webrtc.Track{}
+	audioTrack = &webrtc.TrackLocalStaticSample{}
+	videoTrack = &webrtc.TrackLocalStaticSample{}
 	pipeline   = &gst.Pipeline{}
 )
 
@@ -111,23 +111,13 @@ func main() {
 		panic("-container-path must be specified")
 	}
 
-	pc, err := webrtc.NewPeerConnection(webrtc.Configuration{
-		ICEServers: []webrtc.ICEServer{
-			{
-				URLs: []string{"stun:stun.l.google.com:19302"},
-			},
-		},
-	})
+	var err error
+	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "video/h264"}, "synced-video", "synced-video")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	videoTrack, err = pc.NewTrack(webrtc.DefaultPayloadTypeH264, 5000, "synced-video", "synced-video")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	audioTrack, err = pc.NewTrack(webrtc.DefaultPayloadTypeOpus, 5001, "synced-video", "synced-video")
+	audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "audio/opus"}, "synced-video", "synced-video")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -138,7 +128,7 @@ func main() {
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", serveWs)
 
-	fmt.Println(fmt.Sprintf("Video file '%s' is now available on '%s', have fun!", containerPath, httpListenAddress))
+	fmt.Printf("Video file '%s' is now available on '%s', have fun! \n", containerPath, httpListenAddress)
 	log.Fatal(http.ListenAndServe(httpListenAddress, nil))
 }
 
@@ -168,11 +158,16 @@ func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, messa
 		if err != nil {
 			return err
 		}
+
+		gatherComplete := webrtc.GatheringCompletePromise(pc)
+
 		if err := pc.SetLocalDescription(answer); err != nil {
 			return err
 		}
 
-		answerString, err := json.Marshal(answer)
+		<-gatherComplete
+
+		answerString, err := json.Marshal(pc.LocalDescription())
 		if err != nil {
 			return err
 		}
