@@ -227,5 +227,5 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, homeHTML)
+	fmt.Fprint(w, homeHTML)
 }
