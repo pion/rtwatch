@@ -25,7 +25,7 @@ Using Pion WebRTC and GStreamer you can now watch videos in real-time with your 
 `pacman -S mingw-w64-x86_64-gstreamer mingw-w64-x86_64-gst-libav mingw-w64-x86_64-gst-plugins-good mingw-w64-x86_64-gst-plugins-bad mingw-w64-x86_64-gst-plugins-ugly`
 
 ##### Error Handling
- 
+
    pkg-config --cflags  -- gstreamer-1.0 gstreamer-app-1.0
    pkg-config: exec: "pkg-config": executable file not found in %PATH%
 
@@ -33,13 +33,11 @@ Using Pion WebRTC and GStreamer you can now watch videos in real-time with your 
 
    Sorry, unimplemented: 64 bit mode not compiled in
 
-> RUN `$ g++ -v` 
+> RUN `$ g++ -v`
 
 > CHECK Target- x86_64-w64-mingw32(Required).
 
-  if not Download using [this](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download) 
-     
-
+  if not Download using [this](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download)
 
 
 #### macOS
@@ -48,14 +46,16 @@ brew install gst-plugins-good pkg-config gst-plugins-bad gst-plugins-ugly
 export PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig"
 ```
 
-### Download rtwatch
+### Download and build rtwatch
 ```
-go get github.com/pion/rtwatch
+git clone https://github.com/pion/rtwatch.git
+cd rtwatch
+go build .
 ```
 
 ### Play your video
 ```
-rtwatch -container-path=/home/sean/video.mp4
+./rtwatch -container-path=/home/sean/video.mp4
 > Video file '/home/sean/video.mp4' is now available on ':8080', have fun!
 ```
 
