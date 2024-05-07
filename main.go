@@ -112,12 +112,12 @@ func main() {
 	}
 
 	var err error
-	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "video/h264"}, "synced-video", "synced-video")
+	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "video/h264"}, "synced", "video")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "audio/opus"}, "synced-video", "synced-video")
+	audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "audio/opus"}, "synced", "audio")
 	if err != nil {
 		log.Fatal(err)
 	}
