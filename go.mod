@@ -4,5 +4,6 @@ go 1.15
 
 require (
 	github.com/gorilla/websocket v1.5.0
-	github.com/pion/webrtc/v3 v3.2.4
+	github.com/pion/webrtc/v3 v3.3.4
+	github.com/pion/webrtc/v4 v4.0.1
 )
