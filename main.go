@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -270,8 +271,14 @@ func createPipeline(containerPath string) {
 		}
 	}
 
-	var err error
-	pipeline, err = gst.NewPipelineFromString(fmt.Sprintf("filesrc location=\"%s\" ! decodebin name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! opusenc ! appsink name=audio", containerPath))
+	uri, err := url.Parse(containerPath)
+	if err != nil {
+		panic(err)
+	} else if uri.Scheme == "" {
+		containerPath = "file://" + containerPath
+	}
+
+	pipeline, err = gst.NewPipelineFromString(fmt.Sprintf("uridecodebin3 uri=\"%s\" name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! opusenc ! appsink name=audio", containerPath))
 	if err != nil {
 		panic(err)
 	}
