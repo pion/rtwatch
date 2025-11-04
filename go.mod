@@ -2,7 +2,7 @@ module github.com/pion/rtwatch
 
 go 1.23.1
 
-toolchain go1.24.0
+toolchain go1.25.3
 
 require (
 	github.com/go-gst/go-gst v1.4.0
