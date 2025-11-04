@@ -59,6 +59,11 @@ go build .
 > Video file '/home/sean/video.mp4' is now available on ':8080', have fun!
 ```
 
+rtwatch uses [uridecodebin](https://gstreamer.freedesktop.org/documentation/playback/uridecodebin.html?gi-language=c) so you can launch it with a URI.
+```
+./rtwatch -container-path='https://ia800207.us.archive.org/15/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4'
+```
+
 ### Watch your video with friends!
 Open [http://localhost:8080](http://localhost:8080) and hit play. Open it in multiple tabs so you can see how it syncs between multiple viewers.
 
