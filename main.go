@@ -16,10 +16,10 @@ import (
 const homeHTML = `<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>synced-playback</title>
+		<title>rtwatch</title>
 	</head>
 	<body id="body">
-		<video id="video1" autoplay playsinline></video>
+		<video id="video1" autoplay playsinline controls></video>
 
 		<div>
 		  <input type="number" id="seekTime" value="30">
@@ -43,17 +43,14 @@ const homeHTML = `<!DOCTYPE html>
 			}
 
 			pc.ontrack = function (event) {
-			  if (event.track.kind === 'audio') {
-				return
-			  }
 			  var el = document.getElementById('video1')
 			  el.srcObject = event.streams[0]
-			  el.autoplay = true
-			  el.controls = true
 			}
 
 			conn.onopen = () => {
-				pc.createOffer({offerToReceiveVideo: true, offerToReceiveAudio: true}).then(offer => {
+				pc.addTransceiver('audio', { direction: 'recvonly' });
+				pc.addTransceiver('video', { direction: 'recvonly' });
+				pc.createOffer().then(offer => {
 					pc.setLocalDescription(offer)
 					conn.send(JSON.stringify({event: 'offer', data: JSON.stringify(offer)}))
 				})
@@ -112,12 +109,12 @@ func main() {
 	}
 
 	var err error
-	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "video/h264"}, "synced", "video")
+	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264}, "video", "synced")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "audio/opus"}, "synced", "audio")
+	audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus}, "audio", "synced")
 	if err != nil {
 		log.Fatal(err)
 	}
