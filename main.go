@@ -31,9 +31,17 @@ const homeHTML = `<!DOCTYPE html>
 		  <button type="button" onClick="pauseClick()">Pause</button>
 		</div>
 
+		<div>
+		  Connection State: <span id="connectionState"> </span>
+		</div>
+
 		<script>
 			let conn = new WebSocket('ws://' + window.location.host + '/ws')
 			let pc = new RTCPeerConnection()
+
+			pc.onconnectionstatechange = () => {
+				document.getElementById('connectionState').innerText = pc.connectionState
+			}
 
 			window.seekClick = () => {
 				conn.send(JSON.stringify({event: 'seek', data: document.getElementById('seekTime').value}))
