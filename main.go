@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
@@ -148,7 +149,7 @@ func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, messa
 		if err != nil {
 			log.Print(err)
 		}
-		pipeline.SeekDefault(i*100000, gst.SeekFlagFlush|gst.SeekFlagKeyUnit|gst.SeekFlagSkip)
+		pipeline.SeekTime(time.Duration(i)*time.Second, gst.SeekFlagFlush|gst.SeekFlagKeyUnit|gst.SeekFlagSkip)
 	case "offer":
 		offer := webrtc.SessionDescription{}
 		if err := json.Unmarshal([]byte(message.Data), &offer); err != nil {
