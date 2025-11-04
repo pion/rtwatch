@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-gst/go-gst/gst"
+	"github.com/go-gst/go-gst/gst/app"
 	"github.com/gorilla/websocket"
-	"github.com/pion/rtwatch/gst"
 	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v3/pkg/media"
 )
 
 const homeHTML = `<!DOCTYPE html>
@@ -98,6 +100,9 @@ type websocketMessage struct {
 }
 
 func main() {
+	// Initialize GStreamer
+	gst.Init(nil)
+
 	containerPath := ""
 	httpListenAddress := ""
 	flag.StringVar(&containerPath, "container-path", "", "path to the media file you want to playback")
@@ -119,8 +124,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pipeline = gst.CreatePipeline(containerPath, audioTrack, videoTrack)
-	pipeline.Start()
+	createPipeline(containerPath)
 
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", serveWs)
@@ -132,15 +136,19 @@ func main() {
 func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, message *websocketMessage) error {
 	switch message.Event {
 	case "play":
-		pipeline.Play()
+		if err := pipeline.SetState(gst.StatePlaying); err != nil {
+			log.Print(err)
+		}
 	case "pause":
-		pipeline.Pause()
+		if err := pipeline.SetState(gst.StatePaused); err != nil {
+			log.Print(err)
+		}
 	case "seek":
 		i, err := strconv.ParseInt(message.Data, 0, 64)
 		if err != nil {
 			log.Print(err)
 		}
-		pipeline.SeekToTime(i)
+		pipeline.SeekDefault(i*100000, gst.SeekFlagFlush|gst.SeekFlagKeyUnit|gst.SeekFlagSkip)
 	case "offer":
 		offer := webrtc.SessionDescription{}
 		if err := json.Unmarshal([]byte(message.Data), &offer); err != nil {
@@ -224,5 +232,55 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, homeHTML)
+	_, _ = fmt.Fprint(w, homeHTML)
+}
+
+func createPipeline(containerPath string) {
+	createAppSinkCallback := func(t *webrtc.TrackLocalStaticSample) *app.SinkCallbacks {
+		return &app.SinkCallbacks{
+			NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
+				sample := sink.PullSample()
+				if sample == nil {
+					return gst.FlowEOS
+				}
+
+				buffer := sample.GetBuffer()
+				if buffer == nil {
+					return gst.FlowError
+				}
+
+				samples := buffer.Map(gst.MapRead).Bytes()
+				defer buffer.Unmap()
+
+				if err := t.WriteSample(media.Sample{Data: samples, Duration: *buffer.Duration().AsDuration()}); err != nil {
+					panic(err) //nolint
+				}
+
+				return gst.FlowOK
+			},
+		}
+	}
+
+	var err error
+	pipeline, err = gst.NewPipelineFromString(fmt.Sprintf("filesrc location=\"%s\" ! decodebin name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! opusenc ! appsink name=audio", containerPath))
+	if err != nil {
+		panic(err)
+	}
+
+	if err = pipeline.SetState(gst.StatePlaying); err != nil {
+		panic(err)
+	}
+
+	audioSink, err := pipeline.GetElementByName("audio")
+	if err != nil {
+		panic(err)
+	}
+
+	videoSink, err := pipeline.GetElementByName("video")
+	if err != nil {
+		panic(err)
+	}
+
+	app.SinkFromElement(audioSink).SetCallbacks(createAppSinkCallback(audioTrack))
+	app.SinkFromElement(videoSink).SetCallbacks(createAppSinkCallback(videoTrack))
 }
