@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -98,6 +99,7 @@ var (
 	}
 
 	peerConnectionConfig = webrtc.Configuration{}
+	settingEngine        = webrtc.SettingEngine{}
 
 	audioTrack = &webrtc.TrackLocalStaticSample{}
 	videoTrack = &webrtc.TrackLocalStaticSample{}
@@ -123,7 +125,21 @@ func main() {
 		panic("-container-path must be specified")
 	}
 
-	var err error
+	settingEngine.SetNetworkTypes([]webrtc.NetworkType{
+		webrtc.NetworkTypeTCP4,
+		webrtc.NetworkTypeTCP6,
+	})
+
+	tcpListener, err := net.ListenTCP("tcp", &net.TCPAddr{
+		IP:   net.IP{0, 0, 0, 0},
+		Port: 8443,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	settingEngine.SetICETCPMux(webrtc.NewICETCPMux(nil, tcpListener, 8))
+
 	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264}, "video", "synced")
 	if err != nil {
 		log.Fatal(err)
@@ -206,7 +222,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	peerConnection, err := webrtc.NewPeerConnection(peerConnectionConfig)
+	peerConnection, err := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine)).NewPeerConnection(peerConnectionConfig)
 	if err != nil {
 		log.Print(err)
 		return
