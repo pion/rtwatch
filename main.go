@@ -139,6 +139,7 @@ func main() {
 	}
 
 	settingEngine.SetICETCPMux(webrtc.NewICETCPMux(nil, tcpListener, 8))
+	settingEngine.SetIncludeLoopbackCandidate(true)
 
 	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264}, "video", "synced")
 	if err != nil {
