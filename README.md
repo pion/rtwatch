@@ -18,6 +18,16 @@ Using Pion WebRTC and GStreamer you can now watch videos in real-time with your 
 *rtwatch* is different then any other solution because all state is stored on the backend. Only the current audio/video frame is being sent to the viewers, there is no way they can download/cache the videos either for future usage.
 
 ## Instructions
+### Docker
+This requires host networking to be enabled. By default it is off on macOS at this time. By default this will work on Linux out of the box.
+
+```
+git clone https://github.com/pion/rtwatch.git
+cd rtwatch
+docker build . -t rtcwatch
+docker run --net=host -it rtcwatch
+```
+
 ### Install GStreamer
 #### Debian/Ubuntu
 `sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly`
