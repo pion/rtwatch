@@ -127,10 +127,11 @@ func main() {
 
 	settingEngine.SetNetworkTypes([]webrtc.NetworkType{
 		webrtc.NetworkTypeTCP4,
-		webrtc.NetworkTypeTCP6,
+		webrtc.NetworkTypeUDP4,
+		webrtc.NetworkTypeUDP6,
 	})
 
-	tcpListener, err := net.ListenTCP("tcp", &net.TCPAddr{
+	tcpListener, err := net.ListenTCP("tcp4", &net.TCPAddr{
 		IP:   net.IP{0, 0, 0, 0},
 		Port: 8443,
 	})
