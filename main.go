@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
+//go:build !js
+// +build !js
+
 package main
 
 import (
@@ -92,6 +98,7 @@ const homeHTML = `<!DOCTYPE html>
 </html>
 `
 
+// nolint: gochecknoglobals
 var (
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -142,12 +149,12 @@ func main() {
 	settingEngine.SetICETCPMux(webrtc.NewICETCPMux(nil, tcpListener, 8))
 	settingEngine.SetIncludeLoopbackCandidate(true)
 
-	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264}, "video", "synced")
+	videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264}, "video", "synced") // nolint: lll
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus}, "audio", "synced")
+	audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus}, "audio", "synced") // nolint: lll
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -158,10 +165,10 @@ func main() {
 	http.HandleFunc("/ws", serveWs)
 
 	fmt.Printf("Video file '%s' is now available on '%s', have fun! \n", containerPath, httpListenAddress)
-	log.Fatal(http.ListenAndServe(httpListenAddress, nil))
+	log.Fatal(http.ListenAndServe(httpListenAddress, nil)) // nolint: gosec
 }
 
-func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, message *websocketMessage) error {
+func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, message *websocketMessage) error { // nolint: cyclop,lll
 	switch message.Event {
 	case "play":
 		if err := pipeline.SetState(gst.StatePlaying); err != nil {
@@ -193,11 +200,9 @@ func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, messa
 		}
 
 		gatherComplete := webrtc.GatheringCompletePromise(pc)
-
-		if err := pc.SetLocalDescription(answer); err != nil {
+		if err = pc.SetLocalDescription(answer); err != nil {
 			return err
 		}
-
 		<-gatherComplete
 
 		answerString, err := json.Marshal(pc.LocalDescription())
@@ -212,27 +217,30 @@ func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, messa
 			return err
 		}
 	}
+
 	return nil
 }
 
-func serveWs(w http.ResponseWriter, r *http.Request) {
+func serveWs(w http.ResponseWriter, r *http.Request) { // nolint: cyclop
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		if _, ok := err.(websocket.HandshakeError); !ok {
-			log.Println(err)
-		}
+		log.Println(err)
+
 		return
 	}
 
 	peerConnection, err := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine)).NewPeerConnection(peerConnectionConfig)
 	if err != nil {
 		log.Print(err)
+
 		return
 	} else if _, err = peerConnection.AddTrack(audioTrack); err != nil {
 		log.Print(err)
+
 		return
 	} else if _, err = peerConnection.AddTrack(videoTrack); err != nil {
 		log.Print(err)
+
 		return
 	}
 
@@ -249,6 +257,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			break
 		} else if err := json.Unmarshal(msg, &message); err != nil {
 			log.Print(err)
+
 			return
 		}
 
@@ -264,7 +273,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func createPipeline(containerPath string) {
-	createAppSinkCallback := func(t *webrtc.TrackLocalStaticSample) *app.SinkCallbacks {
+	createAppSinkCallback := func(track *webrtc.TrackLocalStaticSample) *app.SinkCallbacks {
 		return &app.SinkCallbacks{
 			NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
 				sample := sink.PullSample()
@@ -280,7 +289,7 @@ func createPipeline(containerPath string) {
 				samples := buffer.Map(gst.MapRead).Bytes()
 				defer buffer.Unmap()
 
-				if err := t.WriteSample(media.Sample{Data: samples, Duration: *buffer.Duration().AsDuration()}); err != nil {
+				if err := track.WriteSample(media.Sample{Data: samples, Duration: *buffer.Duration().AsDuration()}); err != nil {
 					panic(err) //nolint
 				}
 
@@ -296,7 +305,7 @@ func createPipeline(containerPath string) {
 		containerPath = "file://" + containerPath
 	}
 
-	pipeline, err = gst.NewPipelineFromString(fmt.Sprintf("uridecodebin3 uri=\"%s\" name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! opusenc ! appsink name=audio", containerPath))
+	pipeline, err = gst.NewPipelineFromString(fmt.Sprintf("uridecodebin3 uri=\"%s\" name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! opusenc ! appsink name=audio", containerPath)) // nolint: lll
 	if err != nil {
 		panic(err)
 	}
