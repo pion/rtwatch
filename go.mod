@@ -1,6 +1,6 @@
 module github.com/pion/rtwatch
 
-go 1.23.1
+go 1.24
 
 toolchain go1.25.7
 
