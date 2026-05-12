@@ -11,7 +11,7 @@ RUN     apk --update --no-cache add \
 WORKDIR /rtwatch
 
 ARG     REPO=https://github.com/pion/rtwatch.git
-ARG     BRANCH=master
+ARG     BRANCH=main
 
 RUN     echo -e "GIT Repo: $REPO\nGIT Branch: $BRANCH"
 
