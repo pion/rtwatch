@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-gst/go-gst/gst"
@@ -21,81 +22,12 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
+
+	_ "embed"
 )
 
-const homeHTML = `<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>rtwatch</title>
-	</head>
-	<body id="body">
-		<video id="video1" autoplay playsinline controls></video>
-
-		<div>
-		  <input type="number" id="seekTime" value="30">
-		  <button type="button" onClick="seekClick()">Seek</button>
-		  <button type="button" onClick="playClick()">Play</button>
-		  <button type="button" onClick="pauseClick()">Pause</button>
-		</div>
-
-		<div>
-		  Connection State: <span id="connectionState"> </span>
-		</div>
-
-		<script>
-			let conn = new WebSocket('ws://' + window.location.host + '/ws')
-			let pc = new RTCPeerConnection()
-
-			pc.onconnectionstatechange = () => {
-				document.getElementById('connectionState').innerText = pc.connectionState
-			}
-
-			window.seekClick = () => {
-				conn.send(JSON.stringify({event: 'seek', data: document.getElementById('seekTime').value}))
-			}
-			window.playClick = () => {
-				conn.send(JSON.stringify({event: 'play', data: ''}))
-			}
-			window.pauseClick = () => {
-				conn.send(JSON.stringify({event: 'pause', data: ''}))
-			}
-
-			pc.ontrack = function (event) {
-			  var el = document.getElementById('video1')
-			  el.srcObject = event.streams[0]
-			}
-
-			conn.onopen = () => {
-				pc.addTransceiver('audio', { direction: 'recvonly' });
-				pc.addTransceiver('video', { direction: 'recvonly' });
-				pc.createOffer().then(offer => {
-					pc.setLocalDescription(offer)
-					conn.send(JSON.stringify({event: 'offer', data: JSON.stringify(offer)}))
-				})
-			}
-			conn.onclose = evt => {
-				console.log('Connection closed')
-			}
-			conn.onmessage = evt => {
-				let msg = JSON.parse(evt.data)
-				if (!msg) {
-					return console.log('failed to parse msg')
-				}
-
-				switch (msg.event) {
-				case 'answer':
-					answer = JSON.parse(msg.data)
-					if (!answer) {
-						return console.log('failed to parse answer')
-					}
-					pc.setRemoteDescription(answer)
-				}
-			}
-			window.conn = conn
-		</script>
-	</body>
-</html>
-`
+//go:embed home.html
+var homeHTML string
 
 // nolint: gochecknoglobals
 var (
@@ -123,12 +55,17 @@ func main() {
 
 	containerPath := ""
 	httpListenAddress := ""
+	httpPathPrefix := ""
 	flag.StringVar(&containerPath, "container-path", "", "path to the media file you want to playback")
 	flag.StringVar(&httpListenAddress, "http-listen-address", ":8080", "address for HTTP server to listen on")
+	flag.StringVar(&httpPathPrefix, "http-path-prefix", "", "prefix to host this application from")
 	flag.Parse()
 
 	if containerPath == "" {
 		panic("-container-path must be specified")
+	}
+	if httpPathPrefix != "" && (!strings.HasPrefix(httpPathPrefix, "/") || strings.HasSuffix(httpPathPrefix, "/")) {
+		panic("-http-path-prefix must begin with a '/', or be empty, but must not end with a '/'")
 	}
 
 	settingEngine.SetNetworkTypes([]webrtc.NetworkType{
@@ -160,11 +97,27 @@ func main() {
 
 	createPipeline(containerPath)
 
-	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/ws", serveWs)
+	mux := http.NewServeMux()
 
-	fmt.Printf("Video file '%s' is now available on '%s', have fun! \n", containerPath, httpListenAddress)
-	log.Fatal(http.ListenAndServe(httpListenAddress, nil)) // nolint: gosec
+	mux.HandleFunc("/", serveHome)
+	mux.HandleFunc("/ws", serveWs)
+
+	var handler http.Handler = mux
+
+	if httpPathPrefix != "" {
+		// mux for the new root path
+		prefixMux := http.NewServeMux()
+		// handle /prefix as the home page
+		prefixMux.HandleFunc(httpPathPrefix, serveHome)
+		// redirect /prefix/ to /prefix
+		prefixMux.Handle(fmt.Sprintf("%s/{$}", httpPathPrefix), http.RedirectHandler(httpPathPrefix, http.StatusMovedPermanently))
+		// forward /prefix/... to the original mux without /prefix
+		prefixMux.Handle(fmt.Sprintf("%s/", httpPathPrefix), http.StripPrefix(httpPathPrefix, mux))
+		handler = prefixMux
+	}
+
+	fmt.Printf("Video file '%s' is now available on '%s%s', have fun! \n", containerPath, httpListenAddress, httpPathPrefix)
+	log.Fatal(http.ListenAndServe(httpListenAddress, handler)) // nolint: gosec
 }
 
 func handleWebsocketMessage(pc *webrtc.PeerConnection, ws *websocket.Conn, message *websocketMessage) error { // nolint: cyclop,lll
@@ -268,7 +221,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) { // nolint: cyclop
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = fmt.Fprint(w, homeHTML)
+	fmt.Fprint(w, homeHTML)
 }
 
 func createPipeline(containerPath string) {

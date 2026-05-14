@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>rtwatch</title>
+	</head>
+	<body id="body">
+		<video id="video1" autoplay playsinline controls></video>
+
+		<div>
+		  <input type="number" id="seekTime" value="30">
+		  <button type="button" onClick="seekClick()">Seek</button>
+		  <button type="button" onClick="playClick()">Play</button>
+		  <button type="button" onClick="pauseClick()">Pause</button>
+		</div>
+
+		<div>
+		  Connection State: <span id="connectionState"> </span>
+		</div>
+
+		<script>
+ 			const path = window.location.pathname === '/' ? '' : window.location.pathname
+			let conn = new WebSocket('ws://' + window.location.host + path + '/ws')
+			let pc = new RTCPeerConnection()
+
+			pc.onconnectionstatechange = () => {
+				document.getElementById('connectionState').innerText = pc.connectionState
+			}
+
+			window.seekClick = () => {
+				conn.send(JSON.stringify({event: 'seek', data: document.getElementById('seekTime').value}))
+			}
+			window.playClick = () => {
+				conn.send(JSON.stringify({event: 'play', data: ''}))
+			}
+			window.pauseClick = () => {
+				conn.send(JSON.stringify({event: 'pause', data: ''}))
+			}
+
+			pc.ontrack = function (event) {
+			  var el = document.getElementById('video1')
+			  el.srcObject = event.streams[0]
+			}
+
+			conn.onopen = () => {
+				pc.addTransceiver('audio', { direction: 'recvonly' });
+				pc.addTransceiver('video', { direction: 'recvonly' });
+				pc.createOffer().then(offer => {
+					pc.setLocalDescription(offer)
+					conn.send(JSON.stringify({event: 'offer', data: JSON.stringify(offer)}))
+				})
+			}
+			conn.onclose = evt => {
+				console.log('Connection closed')
+			}
+			conn.onmessage = evt => {
+				let msg = JSON.parse(evt.data)
+				if (!msg) {
+					return console.log('failed to parse msg')
+				}
+
+				switch (msg.event) {
+				case 'answer':
+					answer = JSON.parse(msg.data)
+					if (!answer) {
+						return console.log('failed to parse answer')
+					}
+					pc.setRemoteDescription(answer)
+				}
+			}
+			window.conn = conn
+		</script>
+	</body>
+</html>
