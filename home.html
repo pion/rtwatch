@@ -20,7 +20,8 @@
 		<script>
  			const path = window.location.pathname === '/' ? '' : window.location.pathname
 			let conn = new WebSocket('ws://' + window.location.host + path + '/ws')
-			let pc = new RTCPeerConnection()
+      const stuns = ["stun:stun.schlund.de:3478"]
+      let pc = new RTCPeerConnection({iceServers: [{urls: stuns}]})
 
 			pc.onconnectionstatechange = () => {
 				document.getElementById('connectionState').innerText = pc.connectionState

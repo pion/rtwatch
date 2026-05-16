@@ -15,7 +15,7 @@ ARG     BRANCH=main
 
 RUN     echo -e "GIT Repo: $REPO\nGIT Branch: $BRANCH"
 
-RUN     git clone https://github.com/pion/rtwatch.git --progress --verbose --branch $BRANCH /rtwatch
+RUN     git clone $REPO --progress --verbose --branch $BRANCH /rtwatch
 
 RUN     go install
 
@@ -28,6 +28,8 @@ RUN     apk --update --no-cache add \
         gstreamer
 
 COPY    --from=0 /go/bin/rtwatch /usr/local/bin/rtwatch
+
+EXPOSE 8080
 
 ENTRYPOINT      [ "/usr/local/bin/rtwatch" ]
 CMD             [ "-container-path", "https://ia800207.us.archive.org/15/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4" ]
