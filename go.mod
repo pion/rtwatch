@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.26.5
 
 require (
-	github.com/go-gst/go-gst v1.4.0
+	github.com/go-gst/go-gst v1.4.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/pion/webrtc/v4 v4.2.16
 )
