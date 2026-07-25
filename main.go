@@ -3,6 +3,9 @@
 
 //go:build !js
 
+// RtWatch is WebRTC server that allows you to watch videos in real-time with your friends.
+// Watch your favorite movie perfectly synchronized with multiple viewers.
+// If someone pauses it pauses for everyone, and no one can fast forward only their video.
 package main
 
 import (
